@@ -1,0 +1,90 @@
+﻿<!doctype html>
+<html>
+  <head>
+    <title>Socket.IO chat</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body { font: 13px Helvetica, Arial; }
+      form { background: #000; padding: 3px; position: fixed; bottom: 0; width: 100%; }
+      form #id{ border: 0; padding: 10px; width: 20%; margin-right: .5%; }
+	  form #m{ border: 0; padding: 10px; width: 70%; margin-right: .5%; }
+      form button { width: 9%; background: rgb(130, 224, 255); border: none; padding: 10px; }
+      #messages { list-style-type: none; margin: 0; padding: 0; }
+      #messages li { padding: 5px 10px; }
+      #messages li:nth-child(odd) { background: #eee; }
+    </style>
+  </head>
+  <body>
+	<input type="hidden" id="oldId" autocomplete="off" />
+	<ul id="messages"></ul>
+
+	<canvas id="myCanvas" width="800" height="800"
+	style="border:1px solid #c3c3c3;">
+	Your browser does not support the canvas element.
+	</canvas>
+		
+	
+    <form action="">
+      <input id="id" autocomplete="off" /><input id="m" autocomplete="off" /><button>Send</button>
+    </form>
+    <script src="https://cdn.socket.io/socket.io-1.2.0.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+    <script>
+      var socket = io();
+	  var top,left,width,height;
+	  var rect = {}
+      $('form').submit(function(){
+        socket.emit('chat message', $('#id').val() + " : "+ $('#m').val());
+        $('#m').val('');
+        return false;
+      });
+      $('#m').on('chat message', function(msg){
+        $('#messages').append($('<li>').text(msg));
+      });
+	  $('#btn').on('click', function(msg){
+		socket.emit('chat message', 'click');
+	  });
+	  $('#id').on('change', function(msg){
+		console.log(msg);
+		socket.emit('chat message',$('#oldId').val() +'님이 '+$('#id').val() + '으로 이름을 변경하였습니다' );
+		$('#oldId').val($('#id').val());
+	  });
+	  
+	  socket.on('chat message', function(msg){
+        $('#messages').append($('<li>').text(msg));
+      });
+	  socket.on('rect', function(msg){
+		var canvas = document.getElementById("myCanvas");
+		var ctx = canvas.getContext("2d");
+		ctx.fillStyle = "#FF0000";
+		ctx.fillRect(msg.left,msg.top,msg.width,msg.height);
+      });
+	 
+	  
+	  $('#myCanvas').on('mousedown',function(e){
+				top = e.offsetY;
+				left = e.offsetX;
+				console.log(e);
+	  });
+	   $('#myCanvas').on('mouseup',function(e){
+				height = top - e.offsetY > 0 ? top - e.offsetY : e.offsetY - top ;
+				width = left - e.offsetX > 0 ? left - e.offsetX : e.offsetX - left ;
+				top = top < e.offsetY ? top : e.offsetY ;
+				left = left <	 e.offsetX ? left : e.offsetX;
+				console.log(e);
+				console.log('height',height);
+				var canvas = document.getElementById("myCanvas");
+				var ctx = canvas.getContext("2d");
+				ctx.fillStyle = "#FF0000";
+				ctx.fillRect(left,top,width,height);
+				
+				rect = {"left":left,"top":top,"width":width, "height":height};
+					socket.emit('rect',rect);
+	  })
+	  
+	 
+	  
+	  
+    </script>
+  </body>
+</html>
